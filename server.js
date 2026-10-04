@@ -41,7 +41,7 @@ async function requireDb(req, res, next) {
     next()
   } catch (err) {
     console.error('Baza nije dostupna:', err)
-    res.status(503).json({ error: 'Baza podataka trenutno nije dostupna. Pokušajte ponovo za nekoliko trenutaka.' })
+    res.status(503).json({ error: `Baza podataka trenutno nije dostupna: ${err.message}` })
   }
 }
 
