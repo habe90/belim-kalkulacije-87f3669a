@@ -67,7 +67,7 @@ app.get('/api/offers', requireDb, async (req, res) => {
     res.json(result.rows)
   } catch (err) {
     console.error(err)
-    res.status(500).json({ error: 'Greška pri učitavanju ponuda.' })
+    res.status(500).json({ error: 'Greška pri učitavanju ponuda.', detail: err.message })
   }
 })
 
