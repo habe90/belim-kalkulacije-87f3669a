@@ -61,10 +61,14 @@ function App() {
     setArchiveLoading(true); setArchiveError('')
     try {
       const res = await fetch(`/api/offers${term ? `?search=${encodeURIComponent(term)}` : ''}`)
-      if (!res.ok) throw new Error('Greška servera')
+      if (!res.ok) {
+        let serverMsg = ''
+        try { serverMsg = (await res.json()).error } catch {}
+        throw new Error(serverMsg || `Greška servera (${res.status})`)
+      }
       setArchive(await res.json())
     } catch (err) {
-      setArchiveError('Nije moguće učitati sačuvane ponude. Ova funkcija radi na objavljenom (Live) sajtu, ne u sandbox pregledu.')
+      setArchiveError(err.message?.includes('fetch') ? 'Nije moguće učitati sačuvane ponude. Ova funkcija radi na objavljenom (Live) sajtu, ne u sandbox pregledu.' : err.message)
     } finally {
       setArchiveLoading(false)
     }
@@ -131,13 +135,17 @@ function App() {
       const method = editingId ? 'PUT' : 'POST'
       const url = editingId ? `/api/offers/${editingId}` : '/api/offers'
       const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ offer, grandTotal }) })
-      if (!res.ok) throw new Error('Greška servera')
+      if (!res.ok) {
+        let serverMsg = ''
+        try { serverMsg = (await res.json()).error } catch {}
+        throw new Error(serverMsg || `Greška servera (${res.status})`)
+      }
       const saved = await res.json()
       setEditingId(saved.id)
       setSaved(true)
       setTimeout(() => setSaved(false), 1600)
     } catch (err) {
-      alert('Nije moguće sačuvati ponudu u bazu. Ova funkcija radi na objavljenom (Live) sajtu, ne u sandbox pregledu.')
+      alert(err.message?.includes('fetch') ? 'Nije moguće sačuvati ponudu u bazu. Ova funkcija radi na objavljenom (Live) sajtu, ne u sandbox pregledu.' : `Greška pri čuvanju: ${err.message}`)
     } finally {
       setSaving(false)
     }
