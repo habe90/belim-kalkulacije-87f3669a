@@ -11,8 +11,7 @@ async function run() {
     console.error('DATABASE_URL nije postavljen — baza nije povezana sa aplikacijom.')
     process.exit(1)
   }
-  const isLocal = /localhost|127\.0\.0\.1/.test(process.env.DATABASE_URL)
-  const client = new pg.Client({ connectionString: process.env.DATABASE_URL, ssl: isLocal ? false : { rejectUnauthorized: false } })
+  const client = new pg.Client({ connectionString: process.env.DATABASE_URL, ssl: false })
   await client.connect()
   const files = fs.readdirSync(migrationsDir).filter(f => f.endsWith('.sql')).sort()
   for (const file of files) {
