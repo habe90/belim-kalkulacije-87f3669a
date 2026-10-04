@@ -13,6 +13,7 @@ const pool = process.env.DATABASE_URL
   : null
 
 console.log('DB pool konfigurisan:', !!pool)
+if (pool) pool.on('error', (err) => console.error('Neočekivana greška na DB konekciji (ignorisano, server nastavlja da radi):', err.message))
 
 let schemaReady = false
 async function ensureSchema() {
