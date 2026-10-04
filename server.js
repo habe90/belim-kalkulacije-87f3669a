@@ -8,16 +8,40 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const app = express()
 app.use(express.json({ limit: '2mb' }))
 
-const isLocalDb = (url) => /localhost|127\.0\.0\.1/.test(url || '')
 const pool = process.env.DATABASE_URL
-  ? new pg.Pool({ connectionString: process.env.DATABASE_URL, ssl: isLocalDb(process.env.DATABASE_URL) ? false : { rejectUnauthorized: false } })
+  ? new pg.Pool({ connectionString: process.env.DATABASE_URL, ssl: false })
   : null
 
 console.log('DB pool konfigurisan:', !!pool)
 
-function requireDb(req, res, next) {
-  if (!pool) return res.status(500).json({ error: 'Baza nije konfigurisana.' })
-  next()
+let schemaReady = false
+async function ensureSchema() {
+  if (!pool) throw new Error('DATABASE_URL nije postavljen na serveru.')
+  if (schemaReady) return
+  await pool.query(`CREATE TABLE IF NOT EXISTS offers (
+    id uuid PRIMARY KEY,
+    offer_number text,
+    client_name text,
+    product_names text,
+    grand_total numeric,
+    data jsonb NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now()
+  )`)
+  await pool.query('CREATE INDEX IF NOT EXISTS offers_client_name_idx ON offers (lower(client_name))')
+  await pool.query('CREATE INDEX IF NOT EXISTS offers_offer_number_idx ON offers (lower(offer_number))')
+  await pool.query('CREATE INDEX IF NOT EXISTS offers_created_at_idx ON offers (created_at DESC)')
+  schemaReady = true
+}
+
+async function requireDb(req, res, next) {
+  try {
+    await ensureSchema()
+    next()
+  } catch (err) {
+    console.error('Baza nije dostupna:', err)
+    res.status(503).json({ error: 'Baza podataka trenutno nije dostupna. Pokušajte ponovo za nekoliko trenutaka.' })
+  }
 }
 
 function extractMeta(offerData) {
