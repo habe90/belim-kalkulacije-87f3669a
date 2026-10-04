@@ -53,6 +53,9 @@ function App() {
   const [view, setView] = useState('calculator')
   const [editingId, setEditingId] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  useEffect(() => { setMenuOpen(false) }, [view])
 
   const loadArchive = async (term = '') => {
     setArchiveLoading(true); setArchiveError('')
@@ -161,7 +164,18 @@ function App() {
     <header className="topbar no-print">
       <button className="brand brand-button" onClick={() => setView('calculator')}><img src={LOGO_URL} alt="Belim štamparija" /><span>Kalkulacije za štampariju</span></button>
       <div className="header-actions"><span className={`save-state ${saved ? 'show' : ''}`}>✓ Sačuvano</span><button className={`btn ghost ${view === 'archive' ? 'active-nav' : ''}`} onClick={() => setView('archive')}>Sačuvane ponude</button><button className="btn ghost" onClick={reset}>Nova kalkulacija</button>{view === 'calculator' && <><button className="btn dark" disabled={saving} onClick={saveOffer}>{saving ? 'Čuvanje...' : editingId ? 'Ažuriraj ponudu' : 'Sačuvaj ponudu'}</button><button className="btn primary" onClick={() => window.print()}>Štampaj / PDF</button></>}</div>
+      <button className="burger-btn" aria-label="Meni" onClick={() => setMenuOpen(o => !o)}><span /><span /><span /></button>
     </header>
+    {menuOpen && <div className="mobile-menu-backdrop" onClick={() => setMenuOpen(false)}>
+      <div className="mobile-menu" onClick={e => e.stopPropagation()}>
+        <button className={`mobile-menu-item ${view === 'archive' ? 'active-nav' : ''}`} onClick={() => { setView('archive'); setMenuOpen(false) }}>📁 Sačuvane ponude</button>
+        <button className="mobile-menu-item" onClick={() => { reset(); setMenuOpen(false) }}>＋ Nova kalkulacija</button>
+        {view === 'calculator' && <>
+          <button className="mobile-menu-item primary" disabled={saving} onClick={() => { saveOffer(); setMenuOpen(false) }}>{saving ? 'Čuvanje...' : editingId ? '✓ Ažuriraj ponudu' : '✓ Sačuvaj ponudu'}</button>
+          <button className="mobile-menu-item" onClick={() => { setMenuOpen(false); window.print() }}>🖶 Štampaj / PDF</button>
+        </>}
+      </div>
+    </div>}
 
     <main className="workspace no-print">
       {view === 'archive' ? <section className="archive-view">
@@ -209,11 +223,11 @@ function App() {
           <div className="cost-table-wrap">
             <table className="cost-table"><thead><tr><th>Trošak / materijal</th><th>Potrošnja</th><th>Jedinica</th><th>Nabavna cijena</th><th>Ukupno</th><th></th></tr></thead>
               <tbody>{[...product.items.map(i => ({...i, custom:false})), ...product.customItems.map(i => ({...i, custom:true}))].map(item => <tr key={item.id}>
-                <td>{item.custom ? <input className="table-input name-input" value={item.name} onChange={e => updateItem(product.id, item.id, 'name', e.target.value, true)} /> : <strong>{item.name}</strong>}</td>
-                <td><input className="table-input" inputMode="decimal" value={item.quantity} onChange={e => updateItem(product.id, item.id, 'quantity', e.target.value, item.custom)} placeholder="0" /></td>
-                <td><select value={item.unit} onChange={e => updateItem(product.id, item.id, 'unit', e.target.value, item.custom)}><option>arak</option><option>kg</option><option>l</option><option>m</option><option>rolna</option><option>kanister</option><option>kom</option><option>sat</option><option>usluga</option><option>km</option></select></td>
-                <td><div className="money-input"><input inputMode="decimal" value={item.price} onChange={e => updateItem(product.id, item.id, 'price', e.target.value, item.custom)} placeholder="0,00" /><span>KM</span></div></td>
-                <td className="row-total">{money(parseNum(item.quantity) * parseNum(item.price))}</td>
+                <td data-label="Trošak">{item.custom ? <input className="table-input name-input" value={item.name} onChange={e => updateItem(product.id, item.id, 'name', e.target.value, true)} /> : <strong>{item.name}</strong>}</td>
+                <td data-label="Potrošnja"><input className="table-input" inputMode="decimal" value={item.quantity} onChange={e => updateItem(product.id, item.id, 'quantity', e.target.value, item.custom)} placeholder="0" /></td>
+                <td data-label="Jedinica"><select value={item.unit} onChange={e => updateItem(product.id, item.id, 'unit', e.target.value, item.custom)}><option>arak</option><option>kg</option><option>l</option><option>m</option><option>rolna</option><option>kanister</option><option>kom</option><option>sat</option><option>usluga</option><option>km</option></select></td>
+                <td data-label="Cijena"><div className="money-input"><input inputMode="decimal" value={item.price} onChange={e => updateItem(product.id, item.id, 'price', e.target.value, item.custom)} placeholder="0,00" /><span>KM</span></div></td>
+                <td data-label="Ukupno" className="row-total">{money(parseNum(item.quantity) * parseNum(item.price))}</td>
                 <td className="row-remove">{item.custom && <button title="Obriši trošak" className="row-x" onClick={() => removeCustomItem(product.id, item.id)}>×</button>}</td>
               </tr>)}</tbody>
             </table>
