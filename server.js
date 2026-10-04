@@ -8,9 +8,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const app = express()
 app.use(express.json({ limit: '2mb' }))
 
+const isLocalDb = (url) => /localhost|127\.0\.0\.1/.test(url || '')
 const pool = process.env.DATABASE_URL
-  ? new pg.Pool({ connectionString: process.env.DATABASE_URL, ssl: process.env.DATABASE_URL.includes('sslmode=require') ? { rejectUnauthorized: false } : undefined })
+  ? new pg.Pool({ connectionString: process.env.DATABASE_URL, ssl: isLocalDb(process.env.DATABASE_URL) ? false : { rejectUnauthorized: false } })
   : null
+
+console.log('DB pool konfigurisan:', !!pool)
 
 function requireDb(req, res, next) {
   if (!pool) return res.status(500).json({ error: 'Baza nije konfigurisana.' })
